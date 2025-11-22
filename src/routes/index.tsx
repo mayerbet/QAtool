@@ -1,29 +1,44 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import ProtectedRoute from "../components/ProtectedRoute";
+
+// Importar páginas
 import Login from "../pages/Login";
 import Checklist from "../pages/Checklist";
-import ProtectedRoute from "../components/ProtectedRoute";
+import Historico from "../pages/Historico";
+import Layout from "../components/Layout";
+import SignUp from "../pages/SignUp";
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Rota inicial redireciona corretamente */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-
-      {/* Rota pública */}
+      {/* Rota de Login */}
       <Route path="/login" element={<Login />} />
 
-      {/* Rotas protegidas */}
+      {/* Rota de Criar Conta */}
+      <Route path="/signup" element={<SignUp />} />
+
+      {/* Rotas protegidas dentro do Layout */}
       <Route
-        path="/checklist"
+        path="/"
         element={
           <ProtectedRoute>
-            <Checklist />
+            <Layout>
+              <Checklist />
+            </Layout>
           </ProtectedRoute>
         }
       />
 
-      {/* 404 */}
-      <Route path="*" element={<h1>Página não encontrada</h1>} />
+      <Route
+        path="/historico"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Historico />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
