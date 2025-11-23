@@ -34,7 +34,8 @@ export default function Navbar() {
 
       {/* NAVEGAÇÃO */}
       <nav className="flex gap-6 text-gray-700 font-medium">
-        <Link to="/" className="hover:text-blue-600">Checklist</Link>
+        <Link to="/" className="hover:text-blue-600">Dashboard</Link>
+        <Link to="/checklist" className="hover:text-blue-600">Checklist</Link>
         <Link to="/historico" className="hover:text-blue-600">Histórico</Link>
         <Link to="/comentarios" className="hover:text-blue-600">Comentários</Link>
       </nav>
