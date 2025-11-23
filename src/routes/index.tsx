@@ -7,6 +7,7 @@ import Checklist from "../pages/Checklist";
 import Historico from "../pages/Historico";
 import Layout from "../components/Layout";
 import SignUp from "../pages/SignUp";
+import Comentarios from "../pages/Comentarios"; // mesmo que vazio
 
 export default function AppRoutes() {
   return (
@@ -39,6 +40,17 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+  path="/comentarios"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <Comentarios />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
     </Routes>
   );
 }

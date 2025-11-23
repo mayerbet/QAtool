@@ -2,9 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase"; 
 import GuidePopover from "../components/GuidePopover";
 
-
-
-
 interface Topico {
   id: number;
   topico: string;
@@ -29,7 +26,15 @@ export default function ChecklistWithGuide() {
   const [nomeGC, setNomeGC] = useState("");
   const [chatId, setChatId] = useState("");
 
+  // 🔥 Novo estado: session do usuário logado
+  const [userId, setUserId] = useState<string | null>(null);
+
   useEffect(() => {
+    // Carrega sessão ativa
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user.id ?? null);
+    });
+
     async function fetchData() {
       const { data: guideData } = await supabase.from("guide").select("topico, descricao");
       const { data: comentariosData } = await supabase.from("comentarios_padrao").select("topico, comentario");
@@ -56,7 +61,6 @@ export default function ChecklistWithGuide() {
   }, []);
 
   function abrirGuia(topico: Topico) {
-    console.log("Abrindo guia:", topico);
     setGuiaSelecionado(topico);
     setModalAberto(true);
   }
@@ -86,6 +90,7 @@ export default function ChecklistWithGuide() {
     });
   }
 
+  // 🔥 Gera relatório estruturado
   function gerarRelatorio() {
     const linhas: string[] = [];
 
@@ -105,13 +110,49 @@ export default function ChecklistWithGuide() {
           }
         }
 
-        linhas.push(`${prefixo} ${comentarioFinal}`);
+        linhas.push(`${prefixo} ${topico.topico}\n${comentarioFinal}`);
       }
     });
 
     setRelatorio(linhas.join("\n\n"));
     setRelatorioGerado(true);
   }
+
+  // 🔥 Salva histórico no Supabase
+  async function salvarHistorico() {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+
+  if (!user) {
+    alert("Usuário não autenticado!");
+    return;
+  }
+
+  const registro = {
+    usuario_id: user.id,
+    atendente: nomeGC,
+    contato_id: chatId,
+    relatorio: relatorio,
+    data: new Date().toISOString(),
+  };
+
+  console.log("Enviando para o Supabase:", registro);
+
+  const { error } = await supabase.from("history").insert({
+  usuario_id: userId,
+  atendente: nomeGC,
+  contato_id: chatId,
+  relatorio: relatorio,
+});
+
+  if (error) {
+    console.error("Erro ao salvar:", error);
+    alert("❌ Erro ao salvar no histórico");
+  } else {
+    alert("✅ Salvo com sucesso!");
+  }
+}
+
 
   function limparChecklist() {
     setRespostas({});
@@ -120,7 +161,7 @@ export default function ChecklistWithGuide() {
     setNomeGC("");
     setChatId("");
   }
-  console.log("modalAberto:", modalAberto, "guiaSelecionado:", guiaSelecionado);
+
   return (
     <div className="max-w-3xl mx-auto p-4">
       <h2 className="text-2xl font-semibold mb-6">✅ Checklist com Guia</h2>
@@ -136,23 +177,20 @@ export default function ChecklistWithGuide() {
         <div key={topico.id} className="border rounded-lg mb-4 p-4">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg font-medium">{topico.topico}</h3>
+
             <button
-  onClick={(e) => {
-    // toggle: se já está aberto para este tópico, fecha
-    if (guiaSelecionado?.id === topico.id) {
-      fecharGuia();
-      return;
-    }
-
-    abrirGuia(topico);
-    setGuiaBtnRef(e.currentTarget);
-  }}
-  className="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
->
-  Ver guia
-</button>
-
-
+              onClick={(e) => {
+                if (guiaSelecionado?.id === topico.id) {
+                  fecharGuia();
+                  return;
+                }
+                abrirGuia(topico);
+                setGuiaBtnRef(e.currentTarget);
+              }}
+              className="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+            >
+              Ver guia
+            </button>
           </div>
 
           <div className="flex gap-4 mb-3">
@@ -183,6 +221,7 @@ export default function ChecklistWithGuide() {
         </div>
       ))}
 
+      {/** BOTÃO GERAR RELATÓRIO */}
       <button
         onClick={gerarRelatorio}
         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-4"
@@ -193,6 +232,7 @@ export default function ChecklistWithGuide() {
       {relatorioGerado && (
         <div className="mt-6">
           <h4 className="text-lg font-semibold mb-2">📝 Relatório Gerado</h4>
+
           <textarea
             className="w-full border rounded p-3 mb-4"
             rows={10}
@@ -216,33 +256,23 @@ export default function ChecklistWithGuide() {
           </div>
 
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(relatorio);
-              alert("📋 Relatório copiado para área de transferência!");
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Copiar Relatório
-          </button>
+  onClick={salvarHistorico}
+  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mt-2"
+>
+  💾 Salvar no Histórico
+</button>
 
-          {/* Aqui futuramente adicionamos o botão de salvar histórico */}
         </div>
       )}
 
-{modalAberto && guiaSelecionado && guiaBtnRef && (
-  <GuidePopover
-    titulo={guiaSelecionado.topico}
-    descricao={guiaSelecionado.descricao}
-    onClose={fecharGuia}
-    referenceElement={guiaBtnRef}
-  />
-)}
-
-
-
-
-
-      
+      {modalAberto && guiaSelecionado && guiaBtnRef && (
+        <GuidePopover
+          titulo={guiaSelecionado.topico}
+          descricao={guiaSelecionado.descricao}
+          onClose={fecharGuia}
+          referenceElement={guiaBtnRef}
+        />
+      )}
     </div>
   );
 }
