@@ -8,6 +8,7 @@ import Historico from "../pages/Historico";
 import Layout from "../components/Layout";
 import SignUp from "../pages/SignUp";
 import Comentarios from "../pages/Comentarios"; // mesmo que vazio
+import Dashboard from "../pages/Dashboard";
 
 export default function AppRoutes() {
   return (
@@ -19,8 +20,20 @@ export default function AppRoutes() {
       <Route path="/signup" element={<SignUp />} />
 
       {/* Rotas protegidas dentro do Layout */}
+
       <Route
         path="/"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Dashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/checklist"
         element={
           <ProtectedRoute>
             <Layout>
